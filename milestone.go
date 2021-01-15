@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	// Defines the milestone payload's ID.
+	// Defines the Milestone payload's ID.
 	MilestonePayloadTypeID uint32 = 1
 	// Defines the length of the inclusion merkle proof within a milestone payload.
 	MilestoneInclusionMerkleProofLength = blake2b.Size256
