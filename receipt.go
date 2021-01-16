@@ -42,6 +42,16 @@ type Receipt struct {
 	Funds Serializables
 }
 
+// Sum returns the sum of all MigratedFundsEntry items within the Receipt.
+func (r *Receipt) Sum() uint64 {
+	var sum uint64
+	for _, item := range r.Funds {
+		migrateFundEntry := item.(*MigratedFundsEntry)
+		sum += migrateFundEntry.Deposit
+	}
+	return sum
+}
+
 func (r *Receipt) Deserialize(data []byte, deSeriMode DeSerializationMode) (int, error) {
 	return NewDeserializer(data).
 		AbortIf(func(err error) error {

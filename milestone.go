@@ -129,6 +129,8 @@ type Milestone struct {
 	PublicKeys []MilestonePublicKey
 	// The signatures held by the milestone.
 	Signatures []MilestoneSignature
+	// The inner payload of the milestone. Can be nil or a Receipt.
+	Payload Serializable
 }
 
 // ID computes the ID of the Milestone.
