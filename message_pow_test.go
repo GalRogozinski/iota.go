@@ -23,7 +23,8 @@ func TestSimpleMessage(t *testing.T) {
 
 	bytes, err := message.Serialize(DeSeriModeNoValidation)
 	must(err)
-	fmt.Println(bytes)
+	fmt.Printf("%x\n", bytes)
+	fmt.Printf("bytes length is %d\n", len(bytes))
 	assert.NotEmpty(t, bytes)
 }
 
@@ -51,13 +52,14 @@ func Test100Message(t *testing.T) {
 
 	bytes, err := message.Serialize(DeSeriModeNoValidation)
 	must(err)
-	fmt.Printf("%x", bytes)
+	fmt.Printf("%x\n", bytes)
+	fmt.Printf("bytes length is %d\n", len(bytes))
 	assert.NotEmpty(t, message)
 }
 
 func createUnlockBlocks(n int) Serializables {
 	var unlockBlocks Serializables
-	for i := 0; n < 100; i++ {
+	for i := 0; i < n; i++ {
 		block := SignatureUnlockBlock {
 			Signature: func() Serializable {
 				edSig, _ := randEd25519Signature()
@@ -79,8 +81,7 @@ func createOutputs(n int) Serializables {
 			}(),
 			Amount: uint64(i),
 		}
-		outputs = append(outputs, output)
-		fmt.Println(outputs)
+		outputs = append(outputs, &output)
 	}
 	fmt.Println()
 	return outputs
