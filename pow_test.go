@@ -55,29 +55,40 @@ func TestWorker_Mine(t *testing.T) {
 }
 
 func TestWorker_Small_Message_Mine(t *testing.T) {
-	msg := CreateNInputsMessage(1)
-	//msg, err := hex.DecodeString(SmallMessage)
-	//require.NoError(t, err)
-	nonce, err := testWorker.Mine(context.Background(), msg[:len(msg)-NonceBytes], targetScore)
-	require.NoError(t, err)
-
-	// add nonce to message and check the resulting PoW score
-	binary.LittleEndian.PutUint64(msg[len(msg)-NonceBytes:], nonce)
-	pow := Score(msg)
-	assert.GreaterOrEqual(t, pow, targetScore)
+	for i := 0; i < 20; i++ {
+		msg := CreateNInputsMessage(1)
+		start := time.Now()
+		testWorker.Mine(context.Background(), msg[:len(msg)-NonceBytes], targetScore)
+		duration := time.Since(start)
+		fmt.Println(duration)
+	}
 }
 
 func TestWorker_Large_Message_Mine(t *testing.T) {
-	msg := CreateNInputsMessage(100)
-	//msg, err := hex.DecodeString(BigMessage)
-	//require.NoError(t, err)
-	nonce, err := testWorker.Mine(context.Background(), msg[:len(msg)-NonceBytes], targetScore)
-	require.NoError(t, err)
+	for i := 0; i < 20; i++ {
+		msg := CreateNInputsMessage(100)
+		start := time.Now()
+		testWorker.Mine(context.Background(), msg[:len(msg)-NonceBytes], targetScore)
+		duration := time.Since(start)
+		fmt.Println(duration)
+	}
+}
 
-	// add nonce to message and check the resulting PoW score
-	binary.LittleEndian.PutUint64(msg[len(msg)-NonceBytes:], nonce)
-	pow := Score(msg)
-	assert.GreaterOrEqual(t, pow, targetScore)
+func Benchmark_Small_Message_Mine(b *testing.B) {
+	msg := CreateNInputsMessage(1)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		testWorker.Mine(context.Background(), msg[:len(msg)-NonceBytes], targetScore)
+	}
+}
+
+func Benchmark_Large_Message_Mine(b *testing.B) {
+	msg := CreateNInputsMessage(100)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		testWorker.Mine(context.Background(), msg[:len(msg)-NonceBytes], targetScore)
+	}
+
 }
 
 func TestWorker_Cancel(t *testing.T) {
@@ -169,8 +180,6 @@ func CreateNInputsMessage(n int) []byte {
 
 	bytes, err := message.Serialize(DeSeriModeNoValidation)
 	must(err)
-	fmt.Printf("%x\n", bytes)
-	fmt.Printf("bytes length is %d\n", len(bytes))
 	return bytes
 }
 
