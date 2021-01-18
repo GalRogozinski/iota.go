@@ -55,22 +55,22 @@ func TestWorker_Mine(t *testing.T) {
 }
 
 func TestWorker_Small_Message_Mine(t *testing.T) {
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 100; i++ {
 		msg := CreateNInputsMessage(1)
 		start := time.Now()
 		testWorker.Mine(context.Background(), msg[:len(msg)-NonceBytes], targetScore)
 		duration := time.Since(start)
-		fmt.Println(duration)
+		fmt.Printf("%v", duration.Milliseconds())
 	}
 }
 
 func TestWorker_Large_Message_Mine(t *testing.T) {
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 100; i++ {
 		msg := CreateNInputsMessage(100)
 		start := time.Now()
 		testWorker.Mine(context.Background(), msg[:len(msg)-NonceBytes], targetScore)
 		duration := time.Since(start)
-		fmt.Println(duration)
+		fmt.Printf("%v", duration.Milliseconds())
 	}
 }
 
