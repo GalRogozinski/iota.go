@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto"
 	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 	. "github.com/iotaledger/iota.go"
 	. "github.com/iotaledger/iota.go/pow"
@@ -56,8 +55,9 @@ func TestWorker_Mine(t *testing.T) {
 }
 
 func TestWorker_Small_Message_Mine(t *testing.T) {
-	msg, err := hex.DecodeString(SmallMessage)
-	require.NoError(t, err)
+	msg := CreateNInputsMessage(1)
+	//msg, err := hex.DecodeString(SmallMessage)
+	//require.NoError(t, err)
 	nonce, err := testWorker.Mine(context.Background(), msg[:len(msg)-NonceBytes], targetScore)
 	require.NoError(t, err)
 
@@ -68,8 +68,9 @@ func TestWorker_Small_Message_Mine(t *testing.T) {
 }
 
 func TestWorker_Large_Message_Mine(t *testing.T) {
-	msg, err := hex.DecodeString(BigMessage)
-	require.NoError(t, err)
+	msg := CreateNInputsMessage(100)
+	//msg, err := hex.DecodeString(BigMessage)
+	//require.NoError(t, err)
 	nonce, err := testWorker.Mine(context.Background(), msg[:len(msg)-NonceBytes], targetScore)
 	require.NoError(t, err)
 
@@ -144,8 +145,8 @@ func TestSimpleMessage(t *testing.T) {
 	assert.NotEmpty(t, bytes)
 }
 
-func Test100Message(t *testing.T) {
-	inputs := createInputs(100)
+func CreateNInputsMessage(n int) []byte {
+	inputs := createInputs(n)
 	outputs := createOutputs(1)
 	unlock_blocks := createUnlockBlocks(1)
 
@@ -170,7 +171,7 @@ func Test100Message(t *testing.T) {
 	must(err)
 	fmt.Printf("%x\n", bytes)
 	fmt.Printf("bytes length is %d\n", len(bytes))
-	assert.NotEmpty(t, message)
+	return bytes
 }
 
 func createUnlockBlocks(n int) Serializables {
