@@ -66,7 +66,7 @@ func (w *Worker) Mine(ctx context.Context, data []byte, targetScore float64) (ui
 	}()
 
 	// compute the minimum numbers of trailing zeros required to get a PoW score ≥ targetScore
-	targetZeros := int(math.Ceil(math.Log(float64(len(data)+nonceBytes)*targetScore) / ln3))
+	targetZeros := int(math.Ceil(math.Log(float64(len(data)+NonceBytes)*targetScore) / ln3))
 
 	workerWidth := math.MaxUint64 / uint64(w.numWorkers)
 	for i := 0; i < w.numWorkers; i++ {
@@ -75,7 +75,7 @@ func (w *Worker) Mine(ctx context.Context, data []byte, targetScore float64) (ui
 		go func() {
 			defer wg.Done()
 
-			nonce, workerErr := w.worker(powDigest, startNonce, targetZeros, &done, &counter)
+			nonce, workerErr := w.Worker(powDigest, startNonce, targetZeros, &done, &counter)
 			if workerErr != nil {
 				return
 			}
@@ -94,7 +94,7 @@ func (w *Worker) Mine(ctx context.Context, data []byte, targetScore float64) (ui
 	return nonce, nil
 }
 
-func (w *Worker) worker(powDigest []byte, startNonce uint64, target int, done *uint32, counter *uint64) (uint64, error) {
+func (w *Worker) Worker(powDigest []byte, startNonce uint64, target int, done *uint32, counter *uint64) (uint64, error) {
 	// use batched Curl hashing
 	c := bct.NewCurlP81()
 	hashes := make([]trinary.Trits, bct.MaxBatchSize)

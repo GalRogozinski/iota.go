@@ -1,18 +1,20 @@
-package pow
+package iota_test
 
 import (
 	"context"
 	"crypto"
 	"encoding/binary"
 	"encoding/hex"
+	"fmt"
+	. "github.com/iotaledger/iota.go"
+	. "github.com/iotaledger/iota.go/pow"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"math"
 	"math/rand"
 	"sync/atomic"
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -43,12 +45,12 @@ func TestScore(t *testing.T) {
 }
 
 func TestWorker_Mine(t *testing.T) {
-	msg := append([]byte("Hello, World!"), make([]byte, nonceBytes)...)
-	nonce, err := testWorker.Mine(context.Background(), msg[:len(msg)-nonceBytes], targetScore)
+	msg := append([]byte("Hello, World!"), make([]byte, NonceBytes)...)
+	nonce, err := testWorker.Mine(context.Background(), msg[:len(msg)-NonceBytes], targetScore)
 	require.NoError(t, err)
 
 	// add nonce to message and check the resulting PoW score
-	binary.LittleEndian.PutUint64(msg[len(msg)-nonceBytes:], nonce)
+	binary.LittleEndian.PutUint64(msg[len(msg)-NonceBytes:], nonce)
 	pow := Score(msg)
 	assert.GreaterOrEqual(t, pow, targetScore)
 }
@@ -56,11 +58,11 @@ func TestWorker_Mine(t *testing.T) {
 func TestWorker_Small_Message_Mine(t *testing.T) {
 	msg, err := hex.DecodeString(SmallMessage)
 	require.NoError(t, err)
-	nonce, err := testWorker.Mine(context.Background(), msg[:len(msg)-nonceBytes], targetScore)
+	nonce, err := testWorker.Mine(context.Background(), msg[:len(msg)-NonceBytes], targetScore)
 	require.NoError(t, err)
 
 	// add nonce to message and check the resulting PoW score
-	binary.LittleEndian.PutUint64(msg[len(msg)-nonceBytes:], nonce)
+	binary.LittleEndian.PutUint64(msg[len(msg)-NonceBytes:], nonce)
 	pow := Score(msg)
 	assert.GreaterOrEqual(t, pow, targetScore)
 }
@@ -68,11 +70,11 @@ func TestWorker_Small_Message_Mine(t *testing.T) {
 func TestWorker_Large_Message_Mine(t *testing.T) {
 	msg, err := hex.DecodeString(BigMessage)
 	require.NoError(t, err)
-	nonce, err := testWorker.Mine(context.Background(), msg[:len(msg)-nonceBytes], targetScore)
+	nonce, err := testWorker.Mine(context.Background(), msg[:len(msg)-NonceBytes], targetScore)
 	require.NoError(t, err)
 
 	// add nonce to message and check the resulting PoW score
-	binary.LittleEndian.PutUint64(msg[len(msg)-nonceBytes:], nonce)
+	binary.LittleEndian.PutUint64(msg[len(msg)-NonceBytes:], nonce)
 	pow := Score(msg)
 	assert.GreaterOrEqual(t, pow, targetScore)
 }
@@ -116,10 +118,99 @@ func BenchmarkWorker(b *testing.B) {
 		counter uint64
 	)
 	go func() {
-		_, _ = w.worker(digest[:], 0, math.MaxInt32, &done, &counter)
+		_, _ = w.Worker(digest[:], 0, math.MaxInt32, &done, &counter)
 	}()
 	b.ResetTimer()
 	for atomic.LoadUint64(&counter) < uint64(b.N) {
 	}
 	atomic.StoreUint32(&done, 1)
+}
+
+func TestSimpleMessage(t *testing.T) {
+	signedTxPayload := oneInputOutputTransaction()
+
+	message := Message{
+		NetworkID: 1,
+		Parent1:   [MessageIDLength]byte{},
+		Parent2:   [MessageIDLength]byte{},
+		Payload:   signedTxPayload,
+		Nonce:     0,
+	}
+
+	bytes, err := message.Serialize(DeSeriModeNoValidation)
+	must(err)
+	fmt.Printf("%x\n", bytes)
+	fmt.Printf("bytes length is %d\n", len(bytes))
+	assert.NotEmpty(t, bytes)
+}
+
+func Test100Message(t *testing.T) {
+	inputs := createInputs(100)
+	outputs := createOutputs(1)
+	unlock_blocks := createUnlockBlocks(1)
+
+	txPayload := &Transaction{
+		Essence: &TransactionEssence{
+			Inputs:  inputs,
+			Outputs: outputs,
+			Payload: nil,
+		},
+		UnlockBlocks: unlock_blocks,
+	}
+
+	message := Message{
+		NetworkID: 1,
+		Parent1:   [MessageIDLength]byte{},
+		Parent2:   [MessageIDLength]byte{},
+		Payload:   txPayload,
+		Nonce:     0,
+	}
+
+	bytes, err := message.Serialize(DeSeriModeNoValidation)
+	must(err)
+	fmt.Printf("%x\n", bytes)
+	fmt.Printf("bytes length is %d\n", len(bytes))
+	assert.NotEmpty(t, message)
+}
+
+func createUnlockBlocks(n int) Serializables {
+	var unlockBlocks Serializables
+	for i := 0; i < n; i++ {
+		block := SignatureUnlockBlock{
+			Signature: func() Serializable {
+				edSig, _ := randEd25519Signature()
+				return edSig
+			}(),
+		}
+		unlockBlocks = append(unlockBlocks, &block)
+	}
+	return unlockBlocks
+}
+
+func createOutputs(n int) Serializables {
+	var outputs Serializables
+	for i := 0; i < n; i++ {
+		output := SigLockedSingleOutput{
+			Address: func() Serializable {
+				edAddr, _ := randEd25519Addr()
+				return edAddr
+			}(),
+			Amount: uint64(i),
+		}
+		outputs = append(outputs, &output)
+	}
+	fmt.Println()
+	return outputs
+}
+
+func createInputs(n int) Serializables {
+	var inputs Serializables
+	for i := 0; i < n; i++ {
+		input := UTXOInput{
+			TransactionID:          rand32ByteHash(),
+			TransactionOutputIndex: uint16(i),
+		}
+		inputs = append(inputs, &input)
+	}
+	return inputs
 }
